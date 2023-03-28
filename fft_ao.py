@@ -1,7 +1,7 @@
 import numpy as np
 import LightPipes as lp
 import cv2
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 nGrid = 256
@@ -10,8 +10,7 @@ x = np.arange(-nGrid/2, nGrid/2, 1)
 y = np.arange(-nGrid/2, nGrid/2, 1)[::-1]
 wv = 500 * 1e-6  # lambda [mm]
 A = wv / (2 * np.pi)
-print(A)
-#xx, yy = np.meshgrid(x, y)
+# print(A)
 
 r = np.floor(nGrid * 0.2 / 2)
 obj = np.zeros((nGrid, nGrid))
@@ -32,9 +31,7 @@ f = lp.Begin(size, wv, nGrid)
 f = lp.Zernike(f, nz, mz, size/2, A)
 f = lp.CircAperture(f, size/2, 0, 0)
 phi = lp.Phase(f)
-#phi = np.zeros((nGrid, nGrid))
-""" print(amp_obj)
-comp = np.sqrt(amp_obj/np.max(amp_obj)) * np.exp(1j * phi) """
+
 ft_obj_ = ft_obj * np.exp(1j * phi)
 
 cv2.imwrite('object.bmp', obj*255)
@@ -46,12 +43,18 @@ cv2.imwrite(abeName + '.bmp', phi/np.max(phi) * 255)
 
 abe_obj = np.fft.ifft2(ft_obj_)
 abe_obj_ = np.abs(abe_obj)**2
+abe_int = abe_obj_/np.max(abe_obj_)*255
 cv2.imwrite('Aberated_object_' + abeName +
-            '.bmp', abe_obj_/np.max(abe_obj_)*255)
+            '.bmp', abe_int)
 
+abe_int = abe_int / 255
+_abe_int = np.fft.fftshift(np.fft.fft2(abe_int))
+ftphi = np.angle(_abe_int)
+# print(ftphi)
+ftao = ft_obj_ * np.exp(-1j * ftphi)
+ftao = np.fft.ifftshift(np.fft.ifft2(ftao))
+ftao_int = np.abs(ftao)**2
 
-""" fig = plt.figure()
-plt.imshow(amp_obj/np.max(amp_obj), 'viridis')
-plt.imshow(abe_obj_/np.max(abe_obj_), 'viridis')
+plt.figure()
+plt.imshow(ftao_int/np.max(ftao_int)*255)
 plt.show()
- """
